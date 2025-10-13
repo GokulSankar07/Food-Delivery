@@ -1,0 +1,72 @@
+.signup-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+}
+
+.signup-form {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  width: 300px;
+  text-align: center;
+}
+
+.signup-form input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border 0.3s;
+}
+
+.signup-form input:focus {
+  border-color: #6c63ff;
+  outline: none;
+}
+
+.signup-form button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #6c63ff;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.signup-form button:hover {
+  background-color: #574bff;
+}
+
+.signup-form .login-btn {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.signup-form .login-btn:hover {
+  background-color: #ddd;
+}
+.already-account {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.already-account a {
+  color: blue;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.already-account a:hover {
+  text-decoration: underline;
+}

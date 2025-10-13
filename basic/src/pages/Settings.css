@@ -1,0 +1,77 @@
+/* settings.css */
+
+.settings-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+.settings-container.dark {
+  background: #1e1e1e;
+  color: #f1f1f1;
+}
+
+.settings-container h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-form label {
+  margin: 10px 0 5px;
+  font-weight: bold;
+}
+
+.settings-form input[type="text"],
+.settings-form input[type="email"],
+.settings-form input[type="password"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.settings-option {
+  margin: 15px 0;
+  font-size: 1rem;
+}
+
+.settings-option label {
+  cursor: pointer;
+}
+
+.save-btn {
+  margin-top: 20px;
+  padding: 12px;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.save-btn:hover {
+  background: #0d47a1;
+}
+
+/* Dark Mode inputs */
+.settings-container.dark input[type="text"],
+.settings-container.dark input[type="email"],
+.settings-container.dark input[type="password"] {
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+}

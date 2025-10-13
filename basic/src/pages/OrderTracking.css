@@ -1,0 +1,99 @@
+.orders-container {
+  max-width: 900px;
+  margin: 80px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.orders-container h1 {
+  text-align: center;
+  color: #522e61;
+  margin-bottom: 30px;
+}
+/* Each order card */
+.order-card {
+  background: #f9f9f9;
+  padding: 25px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+  transition: transform 0.2s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-3px);
+}
+
+/* Order ID */
+.order-card h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+/* List of items in the order */
+.orders-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 20px 0;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 16px;
+  color: #555;
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
+
+/* Total price */
+.order-card p {
+  font-size: 16px;
+  margin: 8px 0;
+  color: #333;
+}
+
+/* Status badge */
+.status-text {
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: #fff;
+  background-color: #522e61; /* purple for "Order Placed" */
+}
+
+/* Optional: different colors for other statuses */
+.status-text.preparing {
+  background-color: #ff9800; /* orange */
+}
+
+.status-text.outfordelivery {
+  background-color: #4caf50; /* green */
+}
+
+.status-text.delivered {
+  background-color: #2196f3; /* blue */
+}
+
+/* Tracking container when no order exists */
+.tracking-container {
+  max-width: 600px;
+  margin: 100px auto;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  color: #555;
+}
+
+.tracking-container h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #522e61;
+}
+
+.tracking-container p {
+  font-size: 16px;
+}
