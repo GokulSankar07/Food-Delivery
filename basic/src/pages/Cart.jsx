@@ -1,83 +1,57 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Cart.css";
 
 const Cart = () => {
   const [cart, setCart] = useState([]);
+  const navigate = useNavigate();
 
-  // Load cart from localStorage
   useEffect(() => {
     const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
     setCart(savedCart);
   }, []);
 
-  // Remove item from cart
   const handleRemove = (id) => {
     const updatedCart = cart.filter((item) => item.id !== id);
     setCart(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 
-  // Checkout / Place Order
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
-      alert("Your cart is empty 😔");
+  const handleProceedToPayment = () => {
+    if (!cart.length) {
+      alert("Your cart is empty");
       return;
     }
-
+    
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     if (!currentUser) {
       alert("Please login first");
+      navigate("/signin");
       return;
     }
-
-    // ✅ Ensure restaurantId exists
-    const restaurantId = cart[0]?.restaurantId;
-    if (!restaurantId) {
-      alert("Restaurant not defined for this order!");
+    
+    navigate("/payment");
+  };
+  
+  const handleBuyNow = (item) => {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) {
+      alert("Please login first");
+      navigate("/signin");
       return;
     }
-
-    const totalPrice = cart.reduce((sum, item) => sum + item.price, 0);
-
-    const newOrder = {
-      items: cart.map((item) => ({
-        productId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity || 1,
-      })),
-      total: totalPrice,
-      status: "Order Placed",
-      user: currentUser._id,
-      restaurant: restaurantId, // ✅ must be a valid restaurant ObjectId
-    };
-
-    try {
-      const res = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newOrder),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Failed to place order");
-      }
-
-      const data = await res.json();
-      console.log("Order created:", data);
-
-      // Clear cart
-      localStorage.removeItem("cart");
-      setCart([]);
-      alert(`Order placed! Total: ₹${totalPrice}`);
-    } catch (err) {
-      console.error("Checkout error:", err);
-      alert("Failed to place order. Try again.");
-    }
+    
+    // Set cart to contain only the selected item
+    const singleItemCart = [{
+      ...item,
+      quantity: 1
+    }];
+    
+    localStorage.setItem("cart", JSON.stringify(singleItemCart));
+    navigate("/payment");
   };
 
-  const totalPrice = cart.reduce((sum, item) => sum + item.price, 0);
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
   return (
     <div className="cart-container">
@@ -93,20 +67,31 @@ const Cart = () => {
                 <div>
                   <h3>{item.name}</h3>
                   <p>₹{item.price}</p>
-                  {item.restaurantName && (
-                    <p style={{ fontStyle: "italic" }}>
-                      From: {item.restaurantName}
-                    </p>
-                  )}
+                  {item.restaurantName && <p>From: {item.restaurantName}</p>}
                 </div>
-                <button onClick={() => handleRemove(item.id)}>Remove</button>
+                <div className="item-actions">
+                  <button className="buy-now-btn" onClick={(e) => {
+                    e.stopPropagation();
+                    handleBuyNow(item);
+                  }}>
+                    Buy Now
+                  </button>
+                  <button className="remove-btn" onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(item.id);
+                  }}>
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
-          <h2>Total: ₹{totalPrice}</h2>
-          <button className="checkout-btn" onClick={handleCheckout}>
-            Proceed to Checkout
-          </button>
+          <div className="cart-actions">
+            <h2>Total: ₹{totalPrice}</h2>
+            <button className="checkout-btn" onClick={handleProceedToPayment}>
+              Proceed to Checkout
+            </button>
+          </div>
         </>
       )}
     </div>

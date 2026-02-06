@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
 import Cart from "./pages/Cart";
+import Payment from "./pages/Payment";
 import OrderTracking from './pages/OrderTracking';
 import Profile from './pages/Profile';
 import About from './pages/About';
@@ -18,6 +19,7 @@ const App = () => {
         <Route path="/home" element={<Home />} />
         <Route path ="/cart" element={<Cart />}/>
         <Route path="/order-tracking" element={<OrderTracking />} />
+        <Route path="/payment" element={<Payment />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/about" element={<About />} />
         <Route path="/settings" element={<Settings />} />

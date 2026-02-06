@@ -3,68 +3,80 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+  background: radial-gradient(1200px 600px at 10% 10%, #fee2e2 0%, transparent 60%),
+              radial-gradient(1000px 500px at 90% 90%, #fef3c7 0%, transparent 60%),
+              linear-gradient(135deg, #fff7ed, #ffedd5);
 }
 
 .signup-form {
-  background: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  width: 300px;
+  background: rgba(255,255,255,0.92);
+  padding: 32px;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(2,6,23,0.08);
+  border: 1px solid rgba(226,232,240,0.7);
+  width: 360px;
   text-align: center;
 }
 
 .signup-form input {
   width: 100%;
-  padding: 12px;
+  padding: 14px 16px;
   margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border 0.3s;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  background: #f8fafc;
+  color: #0f172a;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .signup-form input:focus {
-  border-color: #6c63ff;
+  border-color: #fb7185;
+  box-shadow: 0 0 0 3px rgba(251,113,133,0.2);
   outline: none;
 }
 
 .signup-form button {
   width: 100%;
-  padding: 12px;
+  padding: 14px 16px;
   margin-top: 12px;
   border: none;
-  border-radius: 6px;
-  background-color: #6c63ff;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #fb7185, #f43f5e);
   color: white;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: filter 0.2s ease, transform 0.05s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 20px rgba(244,63,94,0.25);
 }
 
 .signup-form button:hover {
-  background-color: #574bff;
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(244,63,94,0.35);
 }
 
 .signup-form .login-btn {
-  background-color: #f0f0f0;
-  color: #333;
+  background-color: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
 }
 
 .signup-form .login-btn:hover {
-  background-color: #ddd;
+  background: #fee2e2;
+  border-color: #fecaca;
 }
+
 .already-account {
   margin-top: 10px;
   font-size: 14px;
 }
 
 .already-account a {
-  color: blue;
+  color: #f43f5e;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .already-account a:hover {

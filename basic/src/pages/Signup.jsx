@@ -1,43 +1,49 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./Signup.css"; 
+import "./Signup.css";
+import BASE_URL from "../config";
 
 const Signup = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("user");
 
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    const newUser = { username, 
-      email, 
-      password,
-      phone,
-      role,
-    };
-    const res = await axios.post("http://localhost:5000/api/users/signup", newUser);
+    try {
+      // Always signup as a "user"
+      const newUser = {
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+        phone: phone.trim(),
+        role: "user",
+      };
 
- if (res.data.message === "Signup Successful") {
+      const res = await axios.post(
+        `${BASE_URL}/api/users/signup`,
+        newUser,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      // ✅ Accept both legacy and corrected backend messages, or HTTP 201
+      const msg = res.data?.message;
+      const ok = res.status === 201 || msg === "Signup Successful" || msg === "Signin Successful";
+      if (ok) {
         localStorage.setItem("currentUser", JSON.stringify(res.data.user));
         alert("Signup successful! Redirecting...");
-
-        // Redirect based on role
-        if (role === "user") navigate("/home");
-        else if (role === "restaurant") navigate(`/restaurant/${res.data.user._id}`);
-        else if (role === "partner") navigate(`/partner/${res.data.user._id}`);
+        navigate("/home");
       } else {
-        alert("Signup failed: " + res.data.message);
+        alert("Signup failed: " + (msg || "Unknown error"));
       }
     } catch (err) {
-      console.error("Signup error:", err);
-      alert(err.response?.data?.message || "Error signing up. Please try again.");
+      console.error("Signup error:", err.response?.data || err.message || err);
+      alert(err.response?.data?.message || err.message || "Error signing up. Please try again.");
     }
   };
 
@@ -78,12 +84,6 @@ const handleSubmit = async (e) => {
           required
         />
 
-        {/* Role Selector */}
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="user">User</option>
-          <option value="restaurant">Restaurant Owner</option>
-          <option value="partner">Delivery Partner</option>
-        </select>
         <button type="submit">Sign Up</button>
 
         <p className="already-account">

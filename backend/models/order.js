@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+/** ---------------- Order Schema ---------------- **/
 const orderSchema = new mongoose.Schema(
   {
     items: [
@@ -7,43 +8,35 @@ const orderSchema = new mongoose.Schema(
         id: Number,
         name: String,
         price: Number,
+        quantity: { type: Number, default: 1 },
         image: String,
       },
     ],
-
-    total: {
-      type: Number,
-      required: true,
-    },
-
+    total: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["Order Placed", "Accepted", "On the Way", "Delivered", "Cancelled"],
+      enum: [
+        "Order Placed",
+        "Accepted",
+        "Preparing",
+        "Ready for Pickup",
+        "Picked Up",
+        "On the Way",
+        "Delivered",
+        "Cancelled",
+        "Rejected"
+      ],
       default: "Order Placed",
     },
-
-    // Reference to the user who placed the order
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    // Reference to the restaurant receiving the order
-    restaurant: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
-      required: true,
-    },
-
-    // ✅ Reference to the delivery partner assigned to this order
-    assignedPartner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "DeliveryPartner",
-      default: null, // will be set when a partner accepts the delivery
-    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+    assignedPartner: { type: mongoose.Schema.Types.ObjectId, ref: "DeliveryPartner", default: null },
+    deliveryDetails: { eta: { type: String, default: null }, location: { type: String, default: null } },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Order", orderSchema);
+// ✅ Fix OverwriteModelError by checking if model already exists
+const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
+
+module.exports = Order;

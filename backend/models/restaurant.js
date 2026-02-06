@@ -1,5 +1,3 @@
-// backend/models/restaurant.js
-
 const mongoose = require("mongoose");
 
 // Schema for menu items
@@ -19,7 +17,7 @@ const restaurantSchema = new mongoose.Schema({
   address: { type: String, required: true },
   menu: [menuItemSchema],
 
-    // Orders linked to this restaurant
+  // Orders linked to this restaurant
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
 
   // Settings fields

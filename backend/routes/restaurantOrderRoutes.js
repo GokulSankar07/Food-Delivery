@@ -5,7 +5,8 @@ const restaurantOrderController = require("../controllers/restaurantOrderControl
 // Get all orders for a restaurant
 router.get("/:restaurantId/orders", restaurantOrderController.getOrdersForRestaurant);
 
-// Update order status
+// Update order status (restaurant only)
 router.put("/:orderId/status", restaurantOrderController.updateOrderStatus);
+
 
 module.exports = router;

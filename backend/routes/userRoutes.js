@@ -1,77 +1,76 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcryptjs");
 const User = require("../models/users");
-const Order = require("../models/order");
+
 // ---------------- Signup ----------------
 router.post("/signup", async (req, res) => {
   try {
-    const { username, email, password, phone } = req.body;
+    const { username, email, password, phone, role } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Username, email, and password are required." });
     }
 
-    // Create new user with correct field names
-    const user = await User.create({ username, email, password, phone });
+    // Normalize email to lowercase and check if it already exists
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
 
-    // Return success message and user details for frontend
-    res.json({
+    // Create new user (password will be hashed automatically)
+    const user = new User({
+      username: username.trim(),
+      email: normalizedEmail,
+      password: password.trim(),
+      phone: phone?.trim(),
+      role: role || "user",
+    });
+
+    await user.save();
+
+    // Return user data without password
+    const { password: _, ...userData } = user.toObject();
+
+    res.status(201).json({
       message: "Signup Successful",
-      user: {
-        name: user.username, // frontend expects 'name'
-        email: user.email,
-        phone: user.phone
-      }
+      user: userData,
     });
   } catch (err) {
     console.error("Signup error:", err);
-    res.status(400).json({ message: err.message });
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // ---------------- Signin ----------------
 router.post("/signin", async (req, res) => {
-  const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const { email, password } = req.body;
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
     }
 
-    if (user.password !== password) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) return res.status(401).json({ message: "Invalid email or password" });
 
-    // Send JSON response with user details for Profile.jsx
-    res.json({
-      message: "Login Successful",
-      user: {
-        name: user.username,
-        email: user.email,
-        phone: user.phone
-      }
+    const isMatch = await bcrypt.compare(password.trim(), user.password);
+    if (!isMatch) return res.status(401).json({ message: "Invalid email or password" });
+
+    const { password: _, ...userData } = user.toObject();
+
+    res.status(200).json({
+      message: "Signin Successful",
+      user: userData,
     });
   } catch (err) {
     console.error("Signin error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
-// ---------------- Get all orders for a user ----------------
-// __define-ocg__ fetch all orders placed by this user
-router.get("/:userId/orders", async (req, res) => {
-  try {
-    const varOcg = req.params.userId; // 👈 user ID
-    const orders = await Order.find({ user: varOcg })
-      .populate("restaurant", "restaurantName") // optional: show which restaurant
-      .sort({ createdAt: -1 });
 
-    res.json({ success: true, orders });
-  } catch (err) {
-    console.error("Error fetching user orders:", err);
-    res.status(500).json({ message: "Server error fetching user orders" });
-  }
-});
 module.exports = router;

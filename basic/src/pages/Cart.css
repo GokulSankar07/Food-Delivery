@@ -17,53 +17,109 @@
 .cart-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin-bottom: 2rem;
 }
 
 .cart-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #ddd;
-  padding: 15px 0;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cart-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .cart-item img {
-  width: 80px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
-  border-radius: 8px;
-  margin-right: 20px;
+  margin-right: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cart-item > div {
+  flex: 1;
 }
 
 .cart-item h3 {
-  margin: 0;
-  font-size: 18px;
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.2rem;
 }
 
 .cart-item p {
-  margin: 5px 0 0 0;
-  color: #555;
+  margin: 0.25rem 0;
+  color: #666;
+  font-size: 0.95rem;
 }
 
-.cart-item button {
-  background: #ff4d4f;
-  color: #fff;
+.item-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.buy-now-btn,
+.remove-btn {
+  padding: 0.5rem 1rem;
   border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
+  font-weight: 500;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.2s;
+  font-size: 0.9rem;
 }
 
-.cart-item button:hover {
-  background: #ff7875;
+.buy-now-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.buy-now-btn:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+.remove-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.remove-btn:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.cart-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+}
+
+.cart-actions h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
 }
 
 .checkout-btn {
-  display: block;
-  width: 100%;
-  padding: 14px 0;
+  padding: 0.75rem 2rem;
+  background-color: #ff6b6b;
+  color: white;
   margin-top: 20px;
   background: #4CAF50;
   color: #fff;

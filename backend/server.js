@@ -1,9 +1,21 @@
+// server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const http = require("http");
 const { Server } = require("socket.io");
+const dotenv = require("dotenv");
+
+// Load environment variables
+dotenv.config();
+console.log("dotenv loaded");
+
+// Debug: Check if environment variables are loaded
+console.log("🔍 Environment Check:");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
+console.log("PORT:", process.env.PORT);
 
 // Models
 const User = require("./models/users");
@@ -17,160 +29,101 @@ const restaurantRoutes = require("./routes/restaurantRoutes");
 const partnerRoutes = require("./routes/partnerRoutes");
 const restaurantOrderRoutes = require("./routes/restaurantOrderRoutes");
 
+// ---------------- Initialize Express ----------------
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    /\.netlify\.app$/,
+    "https://rad-sfogliatella-5d91d2.netlify.app",
+    "https://shimmering-dasik-05e736.netlify.app",
+    "https://glittery-croissant-c9ce00.netlify.app",
+    "https://lustrous-pithivier-d15e72.netlify.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:3001",
+    "http://localhost:5174",
+    "http://192.168.1.3:3000",
+    "http://192.168.1.3:5173",
+    "http://192.168.1.3:3001",
+    "http://192.168.1.3:5174"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
-// ---------------- MongoDB Connection ----------------
-mongoose
-  .connect("mongodb://127.0.0.1:27017/food_delivery")
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ---------------- Create HTTP + Socket.IO Server ----------------
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }, // You can restrict to your frontend URL later
+// ---------------- Root Route ----------------
+app.get("/", (req, res) => {
+  res.send("Backend is working!");
 });
 
-// Make io accessible in all routes
+// ---------------- MongoDB Connection ----------------
+const mongoURI = process.env.MONGO_URI;
+
+console.log("🔍 Debug - Environment variables:");
+console.log("MONGO_URI:", mongoURI ? "Set" : "Not set");
+console.log("PORT:", process.env.PORT);
+
+if (!mongoURI) {
+  console.error("❌ MONGO_URI is not set! Set it in Render Environment variables.");
+  console.error("Current environment variables:", Object.keys(process.env).filter(key => key.includes('MONGO') || key.includes('DB')));
+  process.exit(1);
+}
+
+// Prevent connecting to localhost in production
+if (mongoURI.includes('127.0.0.1') || mongoURI.includes('localhost')) {
+  console.error("❌ Cannot connect to localhost in production!");
+  console.error("MONGO_URI appears to be a localhost connection string");
+  process.exit(1);
+}
+
+mongoose
+  .connect(mongoURI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:");
+    console.error("Error details:", err.message);
+    console.error("Attempting to connect to:", mongoURI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')); // Hide credentials
+    process.exit(1);
+  });
+
+// ---------------- Create HTTP + Socket.IO Server ----------------
+const server = http.createServer(app); // Only declare once
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Replace with frontend URL in production
+    methods: ["GET", "POST"],
+  },
+});
+
+// Attach io globally for controllers
 app.set("io", io);
+
+// ---------------- Socket.IO Events ----------------
+io.on("connection", (socket) => {
+  console.log("🔌 Client connected:", socket.id);
+
+  socket.on("joinRoom", (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log(`❌ Client disconnected (${socket.id}): ${reason}`);
+  });
+});
 
 // ---------------- Routes ----------------
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/partner", partnerRoutes);
-app.use("/api", restaurantOrderRoutes);
+app.use("/api/restaurantOrders", restaurantOrderRoutes); // only this one
 
-// ---------------- Socket.IO Events ----------------
-io.on("connection", (socket) => {
-  console.log("🔌 Client connected:", socket.id);
+// Customer auth routes are defined in routes/userRoutes.js
 
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-  });
-});
-
-// ---------------- User Signup ----------------
-app.post("/signup", async (req, res) => {
-  try {
-    const { username, email, password, phone } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
-
-    const user = await User.create({
-      name: username,
-      email,
-      password,
-      phone,
-    });
-
-    res.json({
-      message: "Signup Successful",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-// ---------------- User Signin ----------------
-app.post("/signin", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.password !== password)
-      return res.status(401).json({ message: "Invalid email or password" });
-
-    res.json({
-      message: "Login Successful",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ---------------- Restaurant Signup ----------------
-app.post("/api/restaurants/register", async (req, res) => {
-  try {
-    const { ownerName, email, password, phone, restaurantName, address } =
-      req.body;
-    const existing = await Restaurant.findOne({ email });
-    if (existing)
-      return res.status(400).json({ message: "Restaurant already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newRestaurant = new Restaurant({
-      ownerName,
-      email,
-      password: hashedPassword,
-      phone,
-      restaurantName,
-      address,
-      menu: [],
-    });
-    await newRestaurant.save();
-
-    res.status(201).json({
-      message: "Restaurant registered successfully",
-      restaurant: {
-        _id: newRestaurant._id,
-        ownerName: newRestaurant.ownerName,
-        email: newRestaurant.email,
-        phone: newRestaurant.phone,
-        restaurantName: newRestaurant.restaurantName,
-        address: newRestaurant.address,
-      },
-    });
-  } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ---------------- Restaurant Signin ----------------
-app.post("/api/restaurants/signin", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const restaurant = await Restaurant.findOne({ email });
-    if (!restaurant)
-      return res.status(404).json({ message: "Restaurant not found" });
-
-    const isMatch = await bcrypt.compare(password, restaurant.password);
-    if (!isMatch)
-      return res.status(401).json({ message: "Invalid email or password" });
-
-    res.json({
-      message: "Login successful",
-      restaurant: {
-        _id: restaurant._id,
-        ownerName: restaurant.ownerName,
-        email: restaurant.email,
-        phone: restaurant.phone,
-        restaurantName: restaurant.restaurantName,
-        address: restaurant.address,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// Restaurant auth routes are defined in routes/restaurantRoutes.js
 
 // ---------------- Restaurant Update Settings ----------------
 app.post("/api/restaurants/update", async (req, res) => {
@@ -197,5 +150,6 @@ app.post("/api/restaurants/update", async (req, res) => {
 });
 
 // ---------------- Start Server ----------------
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+

@@ -1,10 +1,11 @@
 const Order = require("../models/order");
 
-// Get all orders for a restaurant
-exports.getOrdersForRestaurant = async (req, res) => {
+const getOrdersForRestaurant = async (req, res) => {
   try {
-    const orders = await Order.find({ restaurant: req.params.restaurantId })
-      .populate("user", "username email"); // populate user info
+    const { restaurantId } = req.params;
+    const orders = await Order.find({ restaurant: restaurantId })
+      .populate("user", "username email")
+      .populate("assignedPartner", "name email");
     res.json(orders);
   } catch (err) {
     console.error("Error fetching restaurant orders:", err);
@@ -12,8 +13,7 @@ exports.getOrdersForRestaurant = async (req, res) => {
   }
 };
 
-// Update order status
-exports.updateOrderStatus = async (req, res) => {
+const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.orderId);
@@ -22,11 +22,19 @@ exports.updateOrderStatus = async (req, res) => {
     order.status = status;
     await order.save();
 
-    // Populate user info for response
-    const updatedOrder = await Order.findById(order._id).populate("user", "username email");
+    const updatedOrder = await Order.findById(order._id)
+      .populate("user", "username email")
+      .populate("assignedPartner", "name email");
+
+    const io = req.app.get("io");
+    io.emit("orderUpdated", updatedOrder);
+
     res.json(updatedOrder);
   } catch (err) {
     console.error("Error updating order status:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ✅ Export as object
+module.exports = { getOrdersForRestaurant, updateOrderStatus };

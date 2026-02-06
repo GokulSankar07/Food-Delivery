@@ -1,89 +1,105 @@
 const express = require("express");
 const router = express.Router();
 const Order = require("../models/order");
-const User = require("../models/users");
-const Restaurant = require("../models/restaurant");
 
 // ---------------- Create a new order ----------------
 router.post("/", async (req, res) => {
   try {
     const { items, total, user, restaurant } = req.body;
 
-    if (!items || items.length === 0) {
-      return res.status(400).json({ message: "No items in order" });
+    if (!items || !items.length || !total || !user || !restaurant) {
+      return res.status(400).json({ message: "Invalid order data" });
     }
-    if (!user) return res.status(400).json({ message: "User is required" });
-    if (!restaurant)
-      return res.status(400).json({ message: "Restaurant is required" });
 
-    const newOrder = new Order({
+    const newOrder = await Order.create({
       items,
       total,
-      status: "Order Placed",
       user,
       restaurant,
+      status: "Order Placed",
     });
 
-    await newOrder.save();
-
-    // Update user & restaurant documents
-    await User.findByIdAndUpdate(user, { $push: { orders: newOrder._id } });
-    await Restaurant.findByIdAndUpdate(restaurant, {
-      $push: { orders: newOrder._id },
-    });
-
-    // Populate for response
-    const populatedOrder = await Order.findById(newOrder._id)
-      .populate("user", "username email")
-      .populate("restaurant", "restaurantName address");
-
-    // ---------------- Emit only to restaurant room ----------------
+    // Emit live update to restaurant room
     const io = req.app.get("io");
-    if (io) {
-      console.log(`📡 Emitting new order to restaurant ${restaurant}`);
-      io.to(restaurant).emit("orderUpdate", populatedOrder);
-    }
+    if (io) io.to(restaurant).emit("newOrder", newOrder);
 
-    res.status(201).json(populatedOrder);
+    res.status(201).json(newOrder);
   } catch (err) {
-    console.error("❌ Error creating order:", err);
+    console.error("Order creation error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// ---------------- Get an order by ID ----------------
-router.get("/:id", async (req, res) => {
+// ---------------- Fetch orders by user ----------------
+router.get("/user/:userId", async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate("user", "username email")
-      .populate("restaurant", "restaurantName address");
-
-    if (!order) return res.status(404).json({ message: "Order not found" });
-    res.json(order);
-  } catch (err) {
-    console.error("❌ Error fetching order:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ---------------- Get all orders for a restaurant ----------------
-router.get("/restaurant/:restaurantId", async (req, res) => {
-  try {
-    const restaurantId = req.params.restaurantId;
-
-    if (!restaurantId)
-      return res.status(400).json({ message: "Restaurant ID is required" });
-
-    const orders = await Order.find({ restaurant: restaurantId })
-      .populate("user", "username email")
+    const orders = await Order.find({ user: req.params.userId })
       .populate("restaurant", "restaurantName address")
-      .sort({ createdAt: -1 });
-
+      .populate("assignedPartner", "name email");
     res.json(orders);
   } catch (err) {
-    console.error("❌ Error fetching restaurant orders:", err);
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ---------------- Fetch orders by restaurant ----------------
+router.get("/restaurant/:restaurantId", async (req, res) => {
+  try {
+    const orders = await Order.find({ restaurant: req.params.restaurantId })
+      .populate("user", "name email")
+      .populate("assignedPartner", "name email");
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ---------------- Fetch orders by partner ----------------
+router.get("/partner/:partnerId", async (req, res) => {
+  try {
+    const orders = await Order.find({ assignedPartner: req.params.partnerId })
+      .populate("user", "name email")
+      .populate("restaurant", "restaurantName address");
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 module.exports = router;
+ 
+// ---------------- Assign partner to order ----------------
+router.put("/:orderId/assignPartner", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { partnerId } = req.body;
+    if (!partnerId) return res.status(400).json({ message: "partnerId is required" });
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { assignedPartner: partnerId },
+      { new: true }
+    )
+      .populate("user", "name email")
+      .populate("restaurant", "restaurantName address")
+      .populate("assignedPartner", "name email");
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const io = req.app.get("io");
+    if (io) {
+      // Notify the assigned partner
+      io.to(String(partnerId)).emit("newOrder", order);
+      // Broadcast an update
+      io.emit("orderUpdated", order);
+    }
+
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./Home.css";
 import FoodCard from "../components/FoodCard";
 import { Link } from "react-router-dom";
+import BASE_URL from "../config";
 
 import pizzaImg from "../assets/images/pizza.webp";
 import Biryani from "../assets/images/Biryani.jpeg";
@@ -18,15 +19,67 @@ const Home = () => {
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart")) || []);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [restaurants, setRestaurants] = useState([]);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(
+    localStorage.getItem("selectedRestaurantId") || ""
+  );
+  const [selectedRestaurantName, setSelectedRestaurantName] = useState(
+    localStorage.getItem("selectedRestaurantName") || "Choose Restaurant"
+  );
 
-  // Example restaurant info (replace with real MongoDB _id)
+  // Fetch restaurants for runtime selection
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/restaurants`);
+        if (!res.ok) throw new Error("Failed to load restaurants");
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setRestaurants(list);
+
+        // Resolve selection: if saved selection exists and matches, keep it; otherwise pick the first
+        if (list.length > 0) {
+          const match = selectedRestaurantId
+            ? list.find((r) => String(r._id) === String(selectedRestaurantId))
+            : null;
+
+          const next = match || list[0];
+          setSelectedRestaurantId(next._id);
+          setSelectedRestaurantName(next.restaurantName || "Selected Restaurant");
+          localStorage.setItem("selectedRestaurantId", next._id);
+          localStorage.setItem("selectedRestaurantName", next.restaurantName || "Selected Restaurant");
+        } else {
+          // No restaurants available
+          setSelectedRestaurantId("");
+          setSelectedRestaurantName("Choose Restaurant");
+          localStorage.removeItem("selectedRestaurantId");
+          localStorage.removeItem("selectedRestaurantName");
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchRestaurants();
+  }, []);
+
   const restaurantInfo = {
-    restaurantId: "650abcd1234567890ef12345", // backend restaurant _id
-    restaurantName: "FoodieExpress",
+    restaurantId: selectedRestaurantId,
+    restaurantName: selectedRestaurantName,
   };
+
+  // Truncate long restaurant names for the navbar to avoid wrapping
+  const fullRestaurantName = restaurantInfo.restaurantName || "Choose Restaurant";
+  const displayRestaurantName =
+    fullRestaurantName.length > 28
+      ? fullRestaurantName.slice(0, 28) + "…"
+      : fullRestaurantName;
 
   // Prevent adding items from multiple restaurants
   const handleAddToCart = (food) => {
+    if (!restaurantInfo.restaurantId) {
+      alert("Please choose a restaurant first.");
+      return;
+    }
     if (cart.length > 0 && cart[0].restaurantId !== restaurantInfo.restaurantId) {
       alert("You can only order from one restaurant at a time!");
       return;
@@ -61,17 +114,46 @@ const Home = () => {
   );
 
   return (
-    <div className="home-container">
+    <>
       <header className="navbar">
-        <h1 className="logo">{restaurantInfo.restaurantName}</h1>
+        <h1 className="logo" title={fullRestaurantName}>{displayRestaurantName}</h1>
         <nav className="nav-links">
-          <Link to="/cart">Cart</Link>
-          <Link to="/settings">Settings</Link>
-          <Link to="/about">About</Link>
-          <Link to="/order-tracking">Order Tracking</Link>
-          <Link to="/profile">Profile</Link>
+          <Link to="/cart">🛒 Cart</Link>
+          <Link to="/settings">⚙️ Settings</Link>
+          <Link to="/about">ℹ️ About</Link>
+          <Link to="/order-tracking">📍 Tracking</Link>
+          <Link to="/profile">👤 Profile</Link>
         </nav>
       </header>
+
+      <div className="home-container">
+      {/* Restaurant selector */}
+      <div className="filters" style={{ marginTop: 16 }}>
+        <select
+          value={selectedRestaurantId}
+          onChange={(e) => {
+            const id = e.target.value;
+            setSelectedRestaurantId(id);
+            const match = restaurants.find((r) => String(r._id) === String(id));
+            const name = match?.restaurantName || "Choose Restaurant";
+            setSelectedRestaurantName(name);
+            localStorage.setItem("selectedRestaurantId", id);
+            localStorage.setItem("selectedRestaurantName", name);
+            // Clear cart if switching restaurants
+            if (cart.length && cart[0].restaurantId !== id) {
+              setCart([]);
+              localStorage.removeItem("cart");
+            }
+          }}
+        >
+          <option value="">-- Select Restaurant --</option>
+          {restaurants.map((r) => (
+            <option key={r._id} value={r._id}>
+              {r.restaurantName}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="search-bar">
         <input
@@ -117,7 +199,20 @@ const Home = () => {
           <p>No food items found</p>
         )}
       </div>
-    </div>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <p>
+          Welcome to your restaurant dashboard! Manage your menu, orders, and settings all in one place.
+        </p>
+        <p>
+          Need help? Contact support at {" "}
+          <a href="mailto:support@myrestaurant.com">support@myrestaurant.com</a>
+        </p>
+        <p>© 2025 MyRestaurant. All rights reserved.</p>
+      </footer>
+      </div>
+    </>
   );
 };
 

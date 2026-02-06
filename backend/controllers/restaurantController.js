@@ -152,4 +152,32 @@ router.put("/:id/menu/:itemId", async (req, res) => {
 });
 
 
+// ---------------- LIVE ORDER SUPPORT ----------------
+// Add this route for updating order status with live updates
+router.put("/orders/:orderId/status", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, partnerId } = req.body;
+    const io = req.app.get("io"); // get socket instance
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.status = status;
+    if (partnerId) order.partnerId = partnerId;
+
+    await order.save();
+
+    // Emit live updates
+    if (order.customerId) io.to(order.customerId.toString()).emit("orderUpdated", order);
+    if (order.restaurantId) io.to(order.restaurantId.toString()).emit("orderUpdated", order);
+    if (order.partnerId) io.to(order.partnerId.toString()).emit("orderUpdated", order);
+
+    res.json({ message: "Order status updated", order });
+  } catch (err) {
+    console.error("Update order status error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
